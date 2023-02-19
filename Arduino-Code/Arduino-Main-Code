@@ -1,14 +1,21 @@
 //Library for running liquid crystal display
 #include <LiquidCrystal.h> 
 
+//Library for EEPROM (internal memory)
+#include <EEPROM.h>
+
 // Pin assignments
 LiquidCrystal lcd(8,9,10,11,12,13); 
 int buttonPin = 6;
-int flexPin = A0;
+int flexPin1 = A0;
+int flexPin2 = A1;
 int ledPin = 7;
+
+int flexPin = A3;
 
 // Start-up code initialization
 int holdTime = 3000; // Set required hold time for button hold
+int tapTime = 500;
 int startTime = NAN; // Set start time at infinity to prevent it from being reached without setting the value
 int currentState = 1; // Set both current and last state to 1 (OFF)
 int lastState = 1;
@@ -20,7 +27,9 @@ int cal1[50];
 int cal2[50];  
 float index = 7.5; // Hard code finger lengths in for the sake of this simulation
 float middle = 8.5;
-float angle = 0;
+float angle1 = 0;
+float angle2 = 0;
+float angleTot = 0;
 
 void setup() { // Set-up code, runs once
   lcd.begin(2,16); // Initialize LCD
@@ -69,9 +78,12 @@ void loop() { // Main loop
   i++; // Incriment variable so welcome message doesn't run again
 
   // Calculation for diameter
-  float flexRead = analogRead(flexPin);
-  angle = 0.0000254*sq(flexRead)-0.0301*flexRead + 8.1349; // This equation was determined experimentally
-  diameter = sqrt(sq(index) + sq(middle) - 2*index*middle*cos(angle)); //  Calculate diameter from finger lengths and angle
+  float flexRead1 = analogRead(flexPin1);
+  float flexRead2 = analogRead(flexPin2);
+  angle1 = 0.0000254*sq(flexRead1)-0.0301*flexRead1 + 8.1349; // This equation was determined experimentally - converts voltage reading to angle
+  angle2 = 0.0000254*sq(flexRead2)-0.0301*flexRead2 + 8.1349; 
+  angleTot = abs(angle1 - angle2); // Find final angle between the two fingers
+  diameter = sqrt(sq(index) + sq(middle) - 2*index*middle*cos(angleTot)); //  Calculate diameter from finger lengths and angle
   
   // Constant display of diameter
   lcd.setCursor(3,0); 
@@ -107,6 +119,12 @@ void loop() { // Main loop
     calibration(); // RUN CALIBRATION
     }
   }
+
+  // Check for saving value
+  if (currentState == 0 && (millis() - startTime >= tapTime) { // If button press AND tap time has been reached...
+    digitalWrite(ledPin,HIGH)
+    EEPROM.write(
+    
 
 void calibration() { // Calibration function
   

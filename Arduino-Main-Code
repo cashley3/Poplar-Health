@@ -1,31 +1,33 @@
-#include <LiquidCrystal.h> // Include library to run the liquid crystal display
+//Library for running liquid crystal display
+#include <LiquidCrystal.h> 
 
-LiquidCrystal lcd(8,9,10,11,12,13); // Pin assignments
+// Pin assignments
+LiquidCrystal lcd(8,9,10,11,12,13); 
 int buttonPin = 6;
 int flexPin = A0;
 int ledPin = 7;
 
-int holdTime = 3000; // Start-up initialization
-int startTime = NAN;
-int currentState = 1;
+// Start-up code initialization
+int holdTime = 3000; // Set required hold time for button hold
+int startTime = NAN; // Set start time at infinity to prevent it from being reached without setting the value
+int currentState = 1; // Set both current and last state to 1 (OFF)
 int lastState = 1;
 int i = 1;
 float diameter = 00.00;
 
-int cal1[50]; // Calibration initialization
+// Calibration initialization
+int cal1[50]; 
 int cal2[50];  
-float flex180 = 964;
-float flex0 = 697;  
-float index = 7.5;
+float index = 7.5; // Hard code finger lengths in for the sake of this simulation
 float middle = 8.5;
 float angle = 0;
 
-void setup() {
+void setup() { // Set-up code, runs once
   lcd.begin(2,16); // Initialize LCD
   lcd.clear();
   pinMode(buttonPin, INPUT_PULLUP); // Set button pin to internal pull-up
   pinMode(ledPin, OUTPUT); // Set LED pin to output
-  Serial.begin(9600); // Initialize serial monitor
+  Serial.begin(9600); // Initialize serial monitor (just in case)
 }
 
 void loop() { // Main loop  
@@ -64,7 +66,7 @@ void loop() { // Main loop
     lcd.clear();
   }
   
-  i++; // Incriment variable so welcome doesn't run again
+  i++; // Incriment variable so welcome message doesn't run again
 
   // Calculation for diameter
   float flexRead = analogRead(flexPin);

@@ -1,0 +1,256 @@
+#include <LiquidCrystal.h> 
+
+LiquidCrystal lcd(8,9,10,11,12,13); // Pin assignments
+int buttonPin = 6;
+int flexPin = A0;
+int ledPin = 7;
+
+int holdTime = 3000; // Start-up initialization
+int startTime = NAN;
+int currentState = 1;
+int lastState = 1;
+int i = 1;
+float diameter = 00.00;
+
+int cal1[50]; // Calibration initialization
+int cal2[50];  
+float flex180 = 964;
+float flex0 = 697;  
+float index = 7.5;
+float middle = 8.5;
+float angle = 0;
+
+void setup() {
+  lcd.begin(2,16); // Initialize LCD
+  lcd.clear();
+  pinMode(buttonPin, INPUT_PULLUP); // Set button pin to internal pull-up
+  pinMode(ledPin, OUTPUT); // Set LED pin to output
+  Serial.begin(9600); // Initialize serial monitor
+}
+
+void loop() { // Main loop  
+
+  if (i == 1) {  // Welcome message to run once, 2 seconds between screens
+    lcd.setCursor(4,0);
+    lcd.print("Welcome!");
+    digitalWrite(ledPin, HIGH); // Blink LED three times, 0.25 seconds per on/off
+    delay(250);
+    digitalWrite(ledPin, LOW);
+    delay(250);
+    digitalWrite(ledPin, HIGH);
+    delay(250);
+    digitalWrite(ledPin, LOW);
+    delay(250);
+    digitalWrite(ledPin, HIGH);
+    delay(250);
+    digitalWrite(ledPin, LOW);
+    delay(750);
+    lcd.clear();
+    lcd.setCursor(3,0);
+    lcd.print("Using Last"); // Remind how to begin calibration
+    lcd.setCursor(1,1);
+    lcd.print("Calibration...");
+    delay(2000);
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("Hold Button for");
+    lcd.setCursor(0,1);
+    lcd.print("5 Secs Any Time");
+    delay(2000);
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("to Recalibrate!");
+    delay(2000);
+    lcd.clear();
+  }
+  
+  i++; // Incriment variable so welcome doesn't run again
+
+  // Calculation for diameter
+  float flexRead = analogRead(flexPin);
+  angle = 0.0000254*sq(flexRead)-0.0301*flexRead + 8.1349; // This equation was determined experimentally
+  diameter = sqrt(sq(index) + sq(middle) - 2*index*middle*cos(angle)); //  Calculate diameter from finger lengths and angle
+  
+  // Constant display of diameter
+  lcd.setCursor(3,0); 
+  lcd.print("Diameter:");
+  lcd.setCursor(4,1);
+  lcd.print(diameter);
+  lcd.setCursor(9,1);
+  lcd.print("cm");
+
+  // Check for calibration initiation
+  if (digitalRead(buttonPin) == 0) { // If button press...
+    currentState = 0;
+    if (lastState == 1) { // And if last state was NOT press...
+      startTime = millis();  // Store start time of button press
+      lastState = currentState; // Reset last state
+    }
+  }
+
+  if (digitalRead(buttonPin) == 1) { // If button NOT press...
+    currentState = 1;
+    startTime = NAN; // Reset start time of button press
+    if (lastState == 0) {
+       lastState = currentState; // Reset last state
+    }
+  }
+
+  if (currentState == 0 && (millis() - startTime) >= holdTime) { // If button press AND hold time has been reached...
+    while (digitalRead(buttonPin) == 0) { // Clear screen until user releases to prevent issues with calibration loop
+      lcd.clear();
+      digitalWrite(ledPin,HIGH);
+      }
+    digitalWrite(ledPin,LOW);
+    calibration(); // RUN CALIBRATION
+    }
+  }
+
+void calibration() { // Calibration function
+  
+  lcd.clear();
+  
+  // Calibration start message
+  lcd.setCursor(2,0);
+  lcd.print("Tap to Begin"); 
+  lcd.setCursor(2,1);
+  lcd.print("Calibration");
+
+  while (digitalRead(buttonPin) == 1){ // Wait for button press
+  	 // do nothing
+  }
+  
+  while (digitalRead(buttonPin) == 0) { // Clear screen until user releases to prevent skipping next step
+      lcd.clear();
+  }
+  
+  while (digitalRead(buttonPin) == 1){ // Wait for button press
+    lcd.setCursor(0,0);
+    lcd.print("Hold Fingers in"); // Instruct step 1
+    lcd.setCursor(0,1);
+    lcd.print("Ring 1 and Tap");
+    delay(10);
+  }
+
+  lcd.clear();
+  lcd.setCursor(1,0);
+  lcd.print("Hold 5 Seconds"); // Instruct start of 5 second countdown
+
+  i = 1;  
+
+  // Begin 5 second countdown
+  lcd.setCursor(6,1); 
+  lcd.print("5...");
+    for (int i = 0; i <= 9; i++) { // For 1 second, collect 1 data point each 0.1 seconds
+      cal1[i] = analogRead(flexPin);
+      delay(100);
+    }
+  lcd.setCursor(6,1);
+  lcd.print("4...");
+    for (int i = 10; i <= 19; i++) { // For 1 second, collect 1 data point each 0.1 seconds
+      cal1[i] = analogRead(flexPin);
+      delay(100);
+    }  
+  lcd.setCursor(6,1);
+  lcd.print("3...");
+    for (int i = 20; i <= 29; i++) { // For 1 second, collect 1 data point each 0.1 seconds
+      cal1[i] = analogRead(flexPin);
+      delay(100);
+    }
+  lcd.setCursor(6,1);
+  lcd.print("2...");
+    for (int i = 30; i <= 39; i++) { // For 1 second, collect 1 data point each 0.1 seconds
+      cal1[i] = analogRead(flexPin);
+      delay(100);
+    }
+  lcd.setCursor(6,1);
+  lcd.print("1...");
+    for (int i = 40; i <= 49; i++) { // For 1 second, collect 1 data point each 0.1 seconds
+      cal1[i] = analogRead(flexPin);
+      delay(100);
+    }
+
+  lcd.clear();
+  
+	while (digitalRead(buttonPin) == 1){ // Wait for button press
+      lcd.setCursor(0,0);
+      lcd.print("Hold Fingers in"); // Instruct step 2
+      lcd.setCursor(0,1);
+      lcd.print("Ring 2 and Tap");
+      delay(10);
+	}
+
+  lcd.clear();
+  lcd.setCursor(1,0);
+  lcd.print("Hold 5 Seconds"); // Instruct start of 5 second countdown
+
+  i = 1;  
+
+  // Begin 5 second countdown
+  lcd.setCursor(6,1); 
+  lcd.print("5...");
+    for (int i = 0; i <= 9; i++) { // For 1 second, collect 1 data point each 0.1 seconds
+      cal2[i] = analogRead(flexPin);
+      delay(100);
+    }
+  lcd.setCursor(6,1);
+  lcd.print("4...");
+    for (int i = 10; i <= 19; i++) { // For 1 second, collect 1 data point each 0.1 seconds
+      cal2[i] = analogRead(flexPin);
+      delay(100);
+    }  
+  lcd.setCursor(6,1);
+  lcd.print("3...");
+    for (int i = 20; i <= 29; i++) { // For 1 second, collect 1 data point each 0.1 seconds
+      cal2[i] = analogRead(flexPin);
+      delay(100);
+    }
+  lcd.setCursor(6,1);
+  lcd.print("2...");
+    for (int i = 30; i <= 39; i++) { // For 1 second, collect 1 data point each 0.1 seconds
+      cal2[i] = analogRead(flexPin);
+      delay(100);
+    }
+  lcd.setCursor(6,1);
+  lcd.print("1...");
+    for (int i = 40; i <= 49; i++) { // For 1 second, collect 1 data point each 0.1 seconds
+      cal2[i] = analogRead(flexPin);
+      delay(100);
+    }  
+
+  lcd.clear();  
+
+  // Calculate finger lengths
+  int sum1 = 0;  
+  int sum2 = 0;  
+  for (i = 0; i <= 49; i++) { // Sum up the 50 data points for each step
+    sum1 = cal1[i] + sum1;
+    sum2 = cal2[i] + sum2;
+  }
+
+  float cal1Avg = sum1/50; // Average the 50 data points
+  float cal2Avg = sum2/50;
+
+  // HERE IS WHERE CALCULATIONS GO
+
+  // Completion message
+  lcd.setCursor(2,0);
+  lcd.print("Calibration"); 
+  lcd.setCursor(3,1);
+  lcd.print("Complete!");
+  digitalWrite(ledPin, HIGH); // Blink LED three times, 0.25 seconds per on/off
+  delay(250);
+  digitalWrite(ledPin, LOW);
+  delay(250);
+  digitalWrite(ledPin, HIGH);
+  delay(250);
+  digitalWrite(ledPin, LOW);
+  delay(250);
+  digitalWrite(ledPin, HIGH);
+  delay(250);
+  digitalWrite(ledPin, LOW);
+  delay(750);
+  lcd.clear();  
+}
+
+  // This then goes back to the main loop!

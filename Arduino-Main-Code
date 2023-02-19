@@ -1,4 +1,4 @@
-#include <LiquidCrystal.h> 
+#include <LiquidCrystal.h> // Include library to run the liquid crystal display
 
 LiquidCrystal lcd(8,9,10,11,12,13); // Pin assignments
 int buttonPin = 6;

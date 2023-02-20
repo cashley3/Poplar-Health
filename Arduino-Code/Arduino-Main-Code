@@ -45,6 +45,9 @@ float finger1 = 0;
 float finger2 = 0;
 int cell = 0;
 
+float ring1 = 4;
+float ring2 = 6;
+
 void setup() { 
   
   //Miscellaneous Set-up Things
@@ -282,15 +285,14 @@ void calibration() { // Calibration function
   int sum22 = 0; 
   for (i = 0; i <= 49; i++) { // Sum up the 50 data points for each step
     sum11 = cal11[i] + sum11;
-    sum12 = cal12[i] + sum12;
-    sum21 = cal21[i] + sum21;
-    sum22 = cal22[i] + sum22;
   }
-
+  
   float cal11Avg = sum11/50; // Average the 50 data points
   float cal12Avg = sum12/50;
   float cal21Avg = sum21/50;
   float cal22Avg = sum22/50;
+  
+  Serial.println(cal11Avg);
 
   // Convert to angles
   float calAngle11 = 0.0000254*sq(cal11Avg)-0.0301*cal11Avg + 8.1349; // This equation was determined experimentally - converts voltage reading to angle
@@ -301,7 +303,17 @@ void calibration() { // Calibration function
   float calAngleTot2 = abs(calAngle21 - calAngle22);
   
   // Calculate finger lengths
+  float valK = cos(calAngleTot1);
+  float valJ = cos(calAngleTot2);
   
+  float valA = (sq(ring2) - sq(ring1))/2;
+  float valB = sq(valK)*(1-sq(valJ));
+  float valC = valJ - valK;   
+  float valD = valK + sq(ring1) - 1;
+  finger1 = sqrt((valA*valB)/(sq(valB) - sq(valC)*valD) - (valA*valC*sqrt(valD))/(sq(valB) - sq(valC)*valD));
+  finger2 = valK*finger1 - sqrt((sq(valK) - 1)*sq(finger1) + sq(ring1));
+  Serial.println(finger1);
+  Serial.println(finger2);
   
   // Completion message
   lcd.setCursor(2,0);

@@ -1,3 +1,4 @@
+
 //Library for running liquid crystal display
 #include <LiquidCrystal.h> 
 
@@ -58,11 +59,45 @@ void setup() {
   
   // Reading in values from EEPROM
   cell = EEPROM.read(2); // Read in current cell assignment
-  finger1 = ((EEPROM.read(0)) - minLength)/stepLength; // Get finger lengths
-  finger2 = ((EEPROM.read(1)) - minLength)/stepLength;
+  finger1 = (EEPROM.read(0))*stepLength + minLength; // Get finger lengths
+  finger2 = (EEPROM.read(1))*stepLength + minLength;
 }
 
 void loop() { // Main loop  
+  
+  if (i == 1) {  // Welcome message to run once, 2 seconds between screens
+    lcd.setCursor(4,0);
+    lcd.print("Welcome!");
+    digitalWrite(ledPin, HIGH); // Blink LED three times, 0.25 seconds per on/off
+    delay(250);
+    digitalWrite(ledPin, LOW);
+    delay(250);
+    digitalWrite(ledPin, HIGH);
+    delay(250);
+    digitalWrite(ledPin, LOW);
+    delay(250);
+    digitalWrite(ledPin, HIGH);
+    delay(250);
+    digitalWrite(ledPin, LOW);
+    delay(750);
+    lcd.clear();
+    lcd.setCursor(3,0);
+    lcd.print("Using Last"); // Remind how to begin calibration
+    lcd.setCursor(1,1);
+    lcd.print("Calibration...");
+    delay(2000);
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("Hold Button for");
+    lcd.setCursor(0,1);
+    lcd.print("5 Secs Any Time");
+    delay(2000);
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("to Recalibrate!");
+    delay(2000);
+    lcd.clear();
+  }
   
   i++; // Incriment variable so welcome message doesn't run again
 
@@ -274,25 +309,23 @@ void calibration() { // Calibration function
   Serial.println(calAngleTot1);
   Serial.println(calAngleTot2);
   
-  // Calculate finger lengths
+  // Calculate finger lengths (documentation for these equations given in appendices)
   float valK = cos(calAngleTot1);
   float valJ = cos(calAngleTot2);
+  float valZ = (sq(ring1)*valJ - sq(ring2)*valK + sqrt(sq(sq(ring1)*valJ - sq(ring2)*valK) - sq(sq(ring2)-sq(ring1))))/(2*(valJ-valK));
   
-  float valA = (sq(ring2) - sq(ring1))/2;
-  float valB = sq(valK)*(1-sq(valJ));
-  float valC = valJ - valK;   
-  float valD = sq(valK) + sq(ring1) - 1;
-  finger1 = sqrt(abs((valA*valB)/(sq(valB) - sq(valC)*valD) - (valA*valC*sqrt(valD))/(sq(valB) - sq(valC)*valD)));
-  finger2 = valK*finger1 - sqrt((sq(valK) - 1)*sq(finger1) + sq(ring1));
+  finger2 = sqrt(valZ);
+  finger1 = sqrt((sq(ring1)*valJ - sq(ring2)*valK - sq(finger2)*(valJ-valK))/(valJ - valK)); 
   
-  Serial.println(valK);
-  Serial.println(valJ);
-  Serial.println(valA);
-  Serial.println(valB);
-  Serial.println(valC);
-  Serial.println(valD);
   Serial.println(finger1);
   Serial.println(finger2);
+  
+  // Convert to maximize step size, store to EEPROM
+  
+  int f1Byte = int((finger1 - minLength)/stepLength);
+  int f2Byte = int((finger2 - minLength)/stepLength);
+  EEPROM.write(0,f1Byte);
+  EEPROM.write(1,f2Byte);
   
   // Completion message
   lcd.setCursor(2,0);
